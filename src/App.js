@@ -15,7 +15,9 @@ const initialTodos = [
 
 function App() {
 const [todos,setTodos] = useState(initialTodos);
-const [searchText,setSerchText]= useState("");
+const [searchText,setSearchText]= useState("");
+const [searchTimeout,setSearchTimeout]= useState(searchText);
+
 
 // console.log(searchText);
 useEffect(function(){
@@ -24,19 +26,30 @@ useEffect(function(){
   })
 },[])
 
-const createTodo = (title) => {
+useEffect(()=>{
+  const timer = setTimeout(()=>{
+      setSearchText(searchTimeout)
+  },2000)
+  return (()=> clearTimeout(timer))
+  
+})
 
+const createTodo = async (title) => {
 const newTodo = {id:uuidv4(), title, completed: false};
-axios.post('http://localhost:8080/todos',newTodo);
-setTodos([newTodo, ...todos]);
+console.log(newTodo);
+const abcObj = await axios.post('http://localhost:8080/todos',newTodo);
+console.log(abcObj)
+setTodos([abcObj.data.todo, ...todos]);
+// setTodos([newTodo, ...todos]);
 }
 
 const deleteTodo = (id) => {
-  const idx = todos.findIndex(el => el.id === id)
+  const idx = todos.findIndex(el => el.id === id);
   const newTodoState = [...todos];
   // console.log(idx);
   // console.log(newTodoState);
-  newTodoState.splice(idx,1)
+  axios.delete(`http://localhost:8080/todos/${id}`);
+  newTodoState.splice(idx,1);
   setTodos(newTodoState);
   // const cloneTodo = todos
   // const newTodos = cloneTodo.filter((el)=> el.id !== id )
@@ -48,14 +61,21 @@ const updateTodo = (id,updateValue) => {
   const idx = todos.findIndex(el => el.id === id)
   const newTodoState = [...todos];
   newTodoState[idx] = {...newTodoState[idx], ...updateValue};
+  console.log(newTodoState);
+  axios.put(`http://localhost:8080/todos/${id}`,newTodoState[idx]);
   setTodos(newTodoState);
 }
 
-const deleteSearch = (event) => {
-  setSerchText("");
+const deleteSearch = (e) => {
+  setSearchTimeout("");
   const newTodoState = [...todos];
   setTodos(newTodoState);
 }
+
+
+
+
+
 
 
   const filteredData = todos.filter((el)=> el.title.toLowerCase().includes(searchText.toLowerCase()))
@@ -65,7 +85,7 @@ const deleteSearch = (event) => {
   <div className='container py-5' style={{maxWidth: 576}}>
     <TodoForm createTodo={createTodo} />
     <br/>
-    <SearchForm todos={todos} setSerchText={setSerchText} deleteSearch={deleteSearch} searchText={searchText}/>
+    <SearchForm todos={todos} setSearchText={setSearchText} deleteSearch={deleteSearch} searchText={searchText} setSearchTimeout={setSearchTimeout} searchTimeout={searchTimeout}/>
     <br/>
     <ul className="list-group">
       {filteredData.map(el => (
